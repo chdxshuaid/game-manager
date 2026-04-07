@@ -1,0 +1,505 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>全能游戏管理器</title>
+    <style>
+        *{box-sizing:border-box}
+        body{font-family:system-ui, sans-serif; background:#f8f9fa; margin:0; padding:10px}
+        .container{max-width:1400px; margin:0 auto; background:#fff; padding:20px; border-radius:12px; box-shadow:0 2px 10px rgba(0,0,0,0.05)}
+        
+        .nav-tabs{display:flex; gap:8px; padding:0; margin:0 0 20px; list-style:none; border-bottom:1px solid #ddd; flex-wrap:wrap}
+        .nav-link{padding:10px 16px; border:1px solid transparent; border-radius:8px 8px 0 0; cursor:pointer; background:#f1f3f5}
+        .nav-link.active{background:#0d6efd; color:#fff}
+        .tab-pane{display:none}
+        .tab-pane.active{display:block}
+
+        .btn{padding:8px 14px; border:none; border-radius:6px; cursor:pointer; font-size:14px}
+        .btn-sm{padding:4px 8px;font-size:12px}
+        .btn-primary{background:#0d6efd; color:#fff}
+        .btn-success{background:#28a745; color:#fff}
+        .btn-warning{background:#ffc107; color:#000}
+        .btn-danger{background:#dc3545; color:#fff}
+        .btn-info{background:#0dcaf0;color:#000}
+        .btn-secondary{background:#6c757d;color:#fff}
+
+        .mb-3{margin-bottom:12px}
+        .mt-4{margin-top:1.5rem}
+        .global-actions{display:flex; gap:10px; margin-bottom:20px; flex-wrap:wrap}
+
+        .item-row,.account-item{
+            display:flex; align-items:center; justify-content:space-between;
+            padding:8px 10px; border:1px solid #eee; border-radius:4px; margin-bottom:8px
+        }
+        .item-name{color:#0d6efd; cursor:pointer; text-decoration:underline}
+        .progress-empty{color:#6c757d; text-align:center; padding:20px 0}
+        .game-layout{display:flex; gap:20px; width:100%}
+        .game-left{width:30%; border-right:1px solid #ddd; padding-right:20px}
+        .game-right{width:70%; padding-left:20px}
+        .account-name{flex:1; font-weight:500}
+        .account-btn-group, .btn-group-sm{display:flex; gap:5px}
+
+        .grid{display:grid; grid-template-columns:repeat(auto-fill, minmax(140px, 1fr)); gap:16px; margin-top:20px}
+        .char-card{border:1px solid #eee; border-radius:10px; overflow:hidden; text-align:center; background:#fff}
+        .char-avatar{width:100%; aspect-ratio:1; object-fit:cover}
+        .char-name{padding:8px; font-weight:500}
+        .char-actions{padding:4px; display:flex; justify-content:center; gap:4px}
+
+        .task-item{border:1px solid #eee; border-radius:8px; padding:14px; margin-bottom:10px}
+        .task-title{font-size:16px; font-weight:bold; margin-bottom:6px}
+        .task-content{white-space:pre-line; margin-bottom:8px}
+        .task-img{max-width:100%; max-height:400px; border-radius:6px; margin-top:8px}
+        
+        .modal{position:fixed; top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.85);display:flex;justify-content:center;align-items:flex-start;padding:20px;overflow-y:auto;z-index:999}
+        .modal-box{background:#fff; padding:20px; border-radius:10px; width:90%; max-width:800px;margin:0 auto;}
+        .hide{display:none}
+
+        /* 🔥 多图垂直滚动查看（你要的效果） */
+        .img-stack{display:flex;flex-direction:column;gap:12px;align-items:center;}
+        .img-stack img{max-width:100%;max-height:80vh;object-fit:contain;border-radius:8px;}
+
+        @media(max-width:768px){
+            .game-layout{flex-direction:column}
+            .game-left,.game-right{width:100%; border:none; padding:0}
+            .game-left{border-bottom:1px solid #ddd; padding-bottom:20px; margin-bottom:20px}
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>全能游戏管理器</h2>
+    <div class="global-actions">
+        <button class="btn btn-info" id="exportDataBtn">导出所有数据</button>
+        <button class="btn btn-secondary" id="importDataBtn">导入数据</button>
+        <input type="file" id="fileInput" accept=".json" style="display:none;">
+    </div>
+
+    <ul class="nav-tabs">
+        <li><button class="nav-link active" data-tab="url">网址收藏</button></li>
+        <li><button class="nav-link" data-tab="account">游戏账号</button></li>
+        <li><button class="nav-link" data-tab="genshin">原神</button></li>
+        <li><button class="nav-link" data-tab="hsr">星穹铁道</button></li>
+        <li><button class="nav-link" data-tab="zzz">绝区零</button></li>
+        <li><button class="nav-link" data-tab="task">游戏任务</button></li>
+    </ul>
+
+    <div class="tab-pane active" id="url">
+        <button class="btn btn-primary mb-3" id="addUrlBtn">增加网站</button>
+        <div id="urlListContainer"></div>
+    </div>
+
+    <div class="tab-pane" id="account">
+        <button class="btn btn-primary mb-3" id="addGameAccountBtn">添加游戏账号</button>
+        <div class="game-layout">
+            <div class="game-left">
+                <h5>游戏账号列表</h5>
+                <div id="gameAccountList"></div>
+            </div>
+            <div class="game-right">
+                <h5 id="progress-title">请选择左侧一个游戏账号</h5>
+                <button class="btn btn-success mb-3" id="addProgressBtn" disabled>添加探索进度</button>
+                <div id="gameProgressContainer" class="progress-empty"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="tab-pane" id="genshin">
+        <button class="btn btn-primary add-char" data-game="genshin">添加角色 + 一图流</button>
+        <div class="grid" id="genshin-list"></div>
+    </div>
+
+    <div class="tab-pane" id="hsr">
+        <button class="btn btn-primary add-char" data-game="hsr">添加角色 + 一图流</button>
+        <div class="grid" id="hsr-list"></div>
+    </div>
+
+    <div class="tab-pane" id="zzz">
+        <button class="btn btn-primary add-char" data-game="zzz">添加角色 + 一图流</button>
+        <div class="grid" id="zzz-list"></div>
+    </div>
+
+    <div class="tab-pane" id="task">
+        <button class="btn btn-primary" id="add-task">添加任务（可传图）</button>
+        <div id="task-list"></div>
+    </div>
+</div>
+
+<!-- 添加角色弹窗 -->
+<div class="modal hide" id="charModal">
+    <div class="modal-box">
+        <h3>添加角色</h3>
+        <input type="text" id="charName" placeholder="角色名">
+        <p>角色头像（可选）：</p>
+        <input type="file" id="avatarInput" accept="image/*">
+        <p>一图流图片（可多选）：</p>
+        <!-- 🔥 支持多张上传 -->
+        <input type="file" id="chartInput" accept="image/*" multiple>
+        <div style="display:flex;gap:8px;margin-top:10px">
+            <button class="btn btn-success" id="saveChar">保存</button>
+            <button class="btn btn-danger" id="cancelChar">取消</button>
+        </div>
+    </div>
+</div>
+
+<!-- 任务弹窗 -->
+<div class="modal hide" id="taskModal">
+    <div class="modal-box">
+        <h3>添加任务</h3>
+        <input type="text" id="taskTitle" placeholder="标题">
+        <textarea id="taskContent" placeholder="内容"></textarea>
+        <p>配图（可选）：</p>
+        <input type="file" id="taskImgInput" accept="image/*">
+        <div style="display:flex;gap:8px">
+            <button class="btn btn-success" id="saveTask">保存</button>
+            <button class="btn btn-danger" id="cancelTask">取消</button>
+        </div>
+    </div>
+</div>
+
+<!-- 🔥 多图查看弹窗（垂直居中 + 滚轮滚动） -->
+<div class="modal hide" id="viewModal">
+    <div class="modal-box">
+        <h3 id="viewTitle"></h3>
+        <div class="img-stack" id="viewStack"></div>
+        <button class="btn btn-danger" style="margin-top:16px;width:100%" id="closeView">关闭</button>
+    </div>
+</div>
+
+<script>
+document.querySelectorAll('.nav-link').forEach(tab => {
+    tab.addEventListener('click', () => {
+        document.querySelectorAll('.nav-link').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+        tab.classList.add('active');
+        document.getElementById(tab.dataset.tab).classList.add('active');
+    });
+});
+
+const STORAGE_KEY = 'collectionData';
+
+const getData = () => {
+    const s = localStorage.getItem(STORAGE_KEY);
+    if(!s) {
+        return {urls:[],gameAccounts:[],genshin:[],hsr:[],zzz:[],tasks:[]};
+    }
+    try {
+        let data = JSON.parse(s);
+        if (!data.genshin) data.genshin = [];
+        if (!data.hsr) data.hsr = [];
+        if (!data.zzz) data.zzz = [];
+        if (!data.tasks) data.tasks = [];
+
+        // 兼容旧数据：单图转多图数组
+        ['genshin','hsr','zzz'].forEach(g => {
+            data[g] = data[g].map(item => {
+                if (item.chart && !item.charts) {
+                    return {...item, charts:[item.chart], chart:undefined};
+                }
+                return item;
+            });
+        });
+
+        if (data.gameAccounts) {
+            data.gameAccounts.forEach(acc => {
+                if (acc.progress && typeof acc.progress === 'object' && !Array.isArray(acc.progress)) {
+                    let arr = [];
+                    for (let k in acc.progress) arr.push({name:k, url:acc.progress[k]});
+                    acc.progress = arr;
+                }
+                if (!acc.progress) acc.progress = [];
+            });
+        }
+        return data;
+    } catch(e) {
+        return {urls:[],gameAccounts:[],genshin:[],hsr:[],zzz:[],tasks:[]};
+    }
+};
+
+const saveData = (d) => {localStorage.setItem(STORAGE_KEY, JSON.stringify(d));};
+
+const toBase64 = (file) => new Promise((res) => {
+    const r = new FileReader();
+    r.onload = () => res(r.result);
+    r.readAsDataURL(file);
+});
+
+// ------------------------------
+// 网址
+// ------------------------------
+const renderUrlList = () => {
+    const d = getData();
+    const c = document.getElementById('urlListContainer');
+    c.innerHTML = '';
+    if(!d.urls || d.urls.length===0){c.innerHTML='<div class="progress-empty">暂无收藏</div>';return;}
+    d.urls.forEach((it,i)=>{
+        const r=document.createElement('div');r.className='item-row';
+        r.innerHTML=`
+            <span class="item-name" onclick="window.open('${it.url}')">${it.name}</span>
+            <div class="btn-group-sm">
+                <button class="btn btn-warning btn-sm" onclick="editUrl(${i})">修改</button>
+                <button class="btn btn-danger btn-sm" onclick="delUrl(${i})">删除</button>
+            </div>`;
+        c.appendChild(r);
+    });
+};
+const addUrl = () => {
+    const n=prompt('名称');const u=prompt('网址');
+    if(!n||!u)return;const d=getData();d.urls.push({name:n,url:u});saveData(d);renderUrlList();
+};
+const editUrl = (i) => {
+    const d=getData();const n=prompt('名称',d.urls[i].name);const u=prompt('网址',d.urls[i].url);
+    if(n&&u){d.urls[i]={name:n,url:u};saveData(d);renderUrlList();}
+};
+const delUrl = (i) => {
+    if(!confirm('删除？'))return;const d=getData();d.urls.splice(i,1);saveData(d);renderUrlList();
+};
+
+// ------------------------------
+// 账号进度
+// ------------------------------
+let selected = null;
+const renderAccountList = () => {
+    const d=getData();const c=document.getElementById('gameAccountList');c.innerHTML='';
+    if(!d.gameAccounts||d.gameAccounts.length===0){
+        c.innerHTML='<div class="progress-empty">暂无账号</div>';
+        document.getElementById('addProgressBtn').disabled=true;return;
+    }
+    d.gameAccounts.forEach((acc,i)=>{
+        const r=document.createElement('div');r.className='account-item';
+        if(i===selected)r.style.background='#e3f2fd';
+        r.innerHTML=`
+            <span class="account-name">${acc.name}</span>
+            <div class="account-btn-group">
+                <button class="btn btn-warning btn-sm" onclick="editAcc(${i})">修改</button>
+                <button class="btn btn-danger btn-sm" onclick="delAcc(${i})">删除</button>
+            </div>`;
+        r.onclick=()=>{selected=i;renderAll();};
+        c.appendChild(r);
+    });
+    document.getElementById('addProgressBtn').disabled=selected==null;
+};
+const renderProgress = () => {
+    const d=getData();const t=document.getElementById('progress-title');const c=document.getElementById('gameProgressContainer');
+    if(selected==null||!d.gameAccounts[selected]){
+        t.textContent='请选择账号';c.innerHTML='选择账号后查看进度';c.className='progress-empty';return;
+    }
+    const acc=d.gameAccounts[selected];t.textContent=`【${acc.name}】探索进度`;c.className='';c.innerHTML='';
+    if(!acc.progress||acc.progress.length===0){c.innerHTML='<div class="progress-empty">暂无进度</div>';return;}
+    acc.progress.forEach(it=>{
+        const r=document.createElement('div');r.className='item-row';
+        r.innerHTML=`
+            <span class="item-name" onclick="window.open('${it.url}')">${it.name}</span>
+            <div class="btn-group-sm">
+                <button class="btn btn-warning btn-sm" onclick="editProg('${it.name}')">修改</button>
+                <button class="btn btn-danger btn-sm" onclick="delProg('${it.name}')">删除</button>
+            </div>`;
+        c.appendChild(r);
+    });
+};
+const addAcc = () => {
+    const n=prompt('账号名');if(!n)return;const d=getData();d.gameAccounts.push({name:n,progress:[]});saveData(d);renderAll();
+};
+const editAcc = (i) => {
+    const d=getData();const n=prompt('新名称',d.gameAccounts[i].name);if(n){d.gameAccounts[i].name=n;saveData(d);renderAll();}
+};
+const delAcc = (i) => {
+    if(!confirm('删除账号及所有进度？'))return;const d=getData();d.gameAccounts.splice(i,1);selected=null;saveData(d);renderAll();
+};
+const addProg = () => {
+    const d=getData();const acc=d.gameAccounts[selected];const n=prompt('进度名');const u=prompt('网址');
+    if(!n||!u)return;acc.progress.push({name:n,url:u});saveData(d);renderProgress();
+};
+const editProg = (k) => {
+    const d=getData();const acc=d.gameAccounts[selected];const it=acc.progress.find(x=>x.name===k);
+    if(!it)return;const n=prompt('新名称',it.name);const u=prompt('新网址',it.url);
+    if(n&&u){it.name=n;it.url=u;saveData(d);renderProgress();}
+};
+const delProg = (k) => {
+    if(!confirm('删除？'))return;const d=getData();const acc=d.gameAccounts[selected];
+    acc.progress=acc.progress.filter(x=>x.name!==k);saveData(d);renderProgress();
+};
+
+// ------------------------------
+// 角色多图（核心）
+// ------------------------------
+let curGame = null;
+
+function renderChars() {
+    const d=getData();
+    ['genshin','hsr','zzz'].forEach(g=>{
+        const el=document.getElementById(g+'-list');el.innerHTML='';
+        d[g].forEach((c,i)=>{
+            const div=document.createElement('div');div.className='char-card';
+            div.innerHTML=`
+                ${c.avatar?`<img src="${c.avatar}" class="char-avatar">`:'<div style="aspect-ratio:1;background:#eee"></div>'}
+                <div class="char-name">${c.name}</div>
+                <div class="char-actions">
+                    <button class="btn btn-success view" data-game="${g}" data-i="${i}">查看</button>
+                    <button class="btn btn-danger del" data-game="${g}" data-i="${i}">删除</button>
+                </div>`;
+            el.appendChild(div);
+        });
+    });
+
+    document.querySelectorAll('.view').forEach(b=>{
+        b.addEventListener('click',()=>{
+            const g=b.dataset.game;const i=parseInt(b.dataset.i);
+            const c=getData()[g][i];
+            document.getElementById('viewTitle').textContent = c.name;
+            const stack = document.getElementById('viewStack');
+            stack.innerHTML = '';
+            (c.charts || []).forEach(src => {
+                const img = document.createElement('img');
+                img.src = src;
+                stack.appendChild(img);
+            });
+            document.getElementById('viewModal').classList.remove('hide');
+        });
+    });
+
+    document.querySelectorAll('.del').forEach(b=>{
+        b.addEventListener('click',()=>{
+            if(!confirm('删除？'))return;const g=b.dataset.game;const i=parseInt(b.dataset.i);
+            const d=getData();d[g].splice(i,1);saveData(d);renderChars();
+        });
+    });
+}
+
+document.querySelectorAll('.add-char').forEach(b=>{
+    b.addEventListener('click',()=>{
+        curGame=b.dataset.game;
+        document.getElementById('charName').value='';
+        document.getElementById('avatarInput').value='';
+        document.getElementById('chartInput').value='';
+        document.getElementById('charModal').classList.remove('hide');
+    });
+});
+
+document.getElementById('cancelChar').addEventListener('click',()=>{
+    document.getElementById('charModal').classList.add('hide');
+});
+
+// 保存角色（支持多图）
+document.getElementById('saveChar').addEventListener('click',async ()=>{
+    const name=document.getElementById('charName').value.trim();
+    const avatarFile=document.getElementById('avatarInput').files[0];
+    const chartFiles=document.getElementById('chartInput').files;
+
+    if(!name || chartFiles.length===0){
+        alert('请输入角色名并选择至少一张一图流');
+        return;
+    }
+
+    const avatar=avatarFile?await toBase64(avatarFile):null;
+    const charts=[];
+    for(let f of chartFiles){
+        charts.push(await toBase64(f));
+    }
+
+    const d=getData();
+    d[curGame].push({name,avatar,charts});
+    saveData(d);
+    renderChars();
+    document.getElementById('charModal').classList.add('hide');
+});
+
+// ------------------------------
+// 任务
+// ------------------------------
+function renderTasks() {
+    const d=getData();const el=document.getElementById('task-list');el.innerHTML='';
+    d.tasks.forEach((t,i)=>{
+        const div=document.createElement('div');div.className='task-item';
+        div.innerHTML=`
+            <div class="task-title">${t.title}</div>
+            <div class="task-content">${t.content}</div>
+            ${t.img?`<img src="${t.img}" class="task-img">`:""}
+            <button class="btn btn-danger btn-sm del-task" data-i="${i}">删除</button>`;
+        el.appendChild(div);
+    });
+    document.querySelectorAll('.del-task').forEach(b=>{
+        b.addEventListener('click',()=>{
+            if(!confirm('删除？'))return;const d=getData();
+            d.tasks.splice(parseInt(b.dataset.i),1);saveData(d);renderTasks();
+        });
+    });
+}
+
+document.getElementById('add-task').addEventListener('click',()=>{
+    document.getElementById('taskTitle').value='';
+    document.getElementById('taskContent').value='';
+    document.getElementById('taskImgInput').value='';
+    document.getElementById('taskModal').classList.remove('hide');
+});
+
+document.getElementById('cancelTask').addEventListener('click',()=>{
+    document.getElementById('taskModal').classList.add('hide');
+});
+
+document.getElementById('saveTask').addEventListener('click',async ()=>{
+    const title=document.getElementById('taskTitle').value.trim();
+    const content=document.getElementById('taskContent').value.trim();
+    const imgFile=document.getElementById('taskImgInput').files[0];
+    if(!title){alert('标题不能为空');return;}
+    const img=imgFile?await toBase64(imgFile):null;
+    const d=getData();d.tasks.push({title,content,img});saveData(d);
+    renderTasks();document.getElementById('taskModal').classList.add('hide');
+});
+
+// ------------------------------
+// 导出导入
+// ------------------------------
+document.getElementById('exportDataBtn').addEventListener('click',()=>{
+    const d=getData();
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    const hour = String(now.getHours()).padStart(2, '0');
+    const minute = String(now.getMinutes()).padStart(2, '0');
+    const second = String(now.getSeconds()).padStart(2, '0');
+    const filename = `${year}${month}${day}_${hour}${minute}${second}.json`;
+
+    const blob=new Blob([JSON.stringify(d,null,2)],{type:'application/json'});
+    const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+    a.download=filename;a.click();alert('导出成功：'+filename);});
+
+document.getElementById('importDataBtn').addEventListener('click',()=>{
+    document.getElementById('fileInput').click();
+});
+
+document.getElementById('fileInput').addEventListener('change',(e)=>{
+    const f=e.target.files[0];if(!f)return;
+    const r=new FileReader();r.onload=(ev)=>{
+        try{
+            const d=JSON.parse(ev.target.result);
+            saveData(d);renderAll();alert('导入成功');
+        }catch(e){alert('导入失败');}
+        e.target.value='';
+    };
+    r.readAsText(f);
+});
+
+document.getElementById('closeView').addEventListener('click',()=>{
+    document.getElementById('viewModal').classList.add('hide');
+});
+
+function renderAll() {
+    renderUrlList();
+    renderAccountList();
+    renderProgress();
+    renderChars();
+    renderTasks();
+}
+
+window.onload = () => {
+    document.getElementById('addUrlBtn').onclick=addUrl;
+    document.getElementById('addGameAccountBtn').onclick=addAcc;
+    document.getElementById('addProgressBtn').onclick=addProg;
+    renderAll();
+};
+</script>
+</body>
+</html>
